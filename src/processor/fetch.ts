@@ -23,9 +23,24 @@ export class FetchResult {
  * @param part Part number
  * @param url Url to file
  */
-export async function fetchPart(part: number, url: URL): Promise<Uint8Array> {
+export async function fetchPart(part: number, url: URL, cookie: string): Promise<Uint8Array> {
   const downloadTask = await addTask(new Task(`Part${zeroPad(part)}`, "Download", "Running"));
   console.log(`Fetching ${url}`);
+
+  // bonafides-d seems to be an important cookie
+  // the special characters needs to be escaped, otherwise you will get a 403
+  const escaped_cookie = encodeURIComponent(cookie);
+  await browser.cookies.set({
+    url: url.href,
+    name: "d",
+    value: escaped_cookie,
+  });
+  await browser.cookies.set({
+    url: url.href,
+    name: "_sscl_d",
+    value: escaped_cookie,
+  });
+  
   const response = await fetch(url);
   const content = new Uint8Array(await response.arrayBuffer());
   await updateTask(downloadTask, "Completed");
@@ -40,8 +55,8 @@ export async function fetchPart(part: number, url: URL): Promise<Uint8Array> {
  * @param url
  * @param decode
  */
-export async function fetchPartWithDuration(part: number, url: URL, decode: boolean): Promise<FetchResult> {
-  const content = await fetchPart(part, url);
+export async function fetchPartWithDuration(part: number, url: URL, decode: boolean, state: LoadState): Promise<FetchResult> {
+  const content = await fetchPart(part, url, state.bonafides_d);
   let duration;
   if (decode) {
     const decodeTask = await addTask(new Task(`Part${zeroPad(part)}`, "Decoding Audio", "Running"));

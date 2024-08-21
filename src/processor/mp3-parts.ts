@@ -15,7 +15,7 @@ export async function mp3Parts(state: LoadState) {
   const zip = new JSZip();
   const folder = zip.folder(mp3Meta.title);
   for (const [part, url] of spine.partFiles) {
-    const content = await fetchPart(part, url);
+    const content = await fetchPart(part, url, state.bonafides_d);
     const tagged = NodeID3.update(mp3Meta.tags, <Buffer>content);
     folder.file(`Part-${zeroPad(part)}.mp3`, tagged.buffer);
   }

@@ -16,7 +16,7 @@ export async function mp3WithCUE(state: LoadState, decode: boolean) {
   const mp3Meta = await getMp3Meta(state);
   const spine = await getSpine(state);
   const zip = new JSZip();
-  const processed = await processMP3Files(spine, mp3Meta, decode);
+  const processed = await processMP3Files(spine, mp3Meta, decode, state);
   console.log("Finished processing mp3");
 
   console.log("Chapter list");
@@ -80,7 +80,7 @@ FILE "${meta.title}.mp3" MP3`;
  * @param meta Mp3 metadata
  * @param decode
  */
-export async function processMP3Files(spine: Spine, meta: MP3Meta, decode: boolean) {
+export async function processMP3Files(spine: Spine, meta: MP3Meta, decode: boolean, state: LoadState) {
   const processed = new ProcessedMP3(meta);
   let offset = 0;
   let current;
@@ -95,10 +95,10 @@ export async function processMP3Files(spine: Spine, meta: MP3Meta, decode: boole
       if (current) {
         offset = finalizePartOffsets(current, entry, offset);
         console.log(`Fetching part ${current.part + 1}`);
-        current = await fetchPartWithDuration(current.part + 1, spine.getPartUrl(current.part + 1), decode);
+        current = await fetchPartWithDuration(current.part + 1, spine.getPartUrl(current.part + 1), decode, state);
       } else {
         console.log(`Fetching part 1`);
-        current = await fetchPartWithDuration(1, spine.getPartUrl(1), decode);
+        current = await fetchPartWithDuration(1, spine.getPartUrl(1), decode, state);
       }
       processed.parts.push(current.content);
     }

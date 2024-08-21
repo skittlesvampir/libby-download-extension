@@ -100,14 +100,27 @@ function handleMedia(details: { url?: string | URL; method?: string; requestId?:
 }
 
 function extractBookJson(rsp: str): any {
-  // find the line with "window.bData" and match json string within
-  const regex = /window\.bData\s*=\s*({.*});/g;
-  const match = regex.exec(rsp);
+  // much appreciation to @username1233414125 for this approach
+
+  // find embedded base64 string for apple-touch-icon-precomposed inline and decrypt it
+  let regex = /apple-touch-icon-precomposed-inline.*img\/jpeg;base64,([A-Za-z0-9+./=]*)"/g;
+  const match = regex.exec(rsp)[1];
   if (!match) {
     return null;
   }
-  const json = match[1];
-  return JSON.parse(json);
+
+  const decoded = atob(match);
+  const parts = decoded.split("-");
+  let encoded = parts[0] + parts[parts.length - 1];
+
+  regex = /\./g;
+  encoded = encoded.replace(regex, "=");
+
+  regex = /(.)(.)(.)(.)/g;
+  encoded = encoded.replace(regex, "$4$2$3$1");
+
+  const json = atob(encoded);
+  return JSON.parse(json);  
 }
 
 /**
@@ -119,7 +132,7 @@ function handleTitle(details: { url?: string | URL; method?: string; requestId?:
   const filter = browser.webRequest.filterResponseData(details.requestId);
   bufferJSONBody(filter, async (body) => {
     try {
-      const responseJson = extractBookJson(body);
+      const responseJson = extractBookJson(body).b;
       console.log(`Got response ${JSON.stringify(responseJson)}`);
       const title = responseJson.title;
       state.title = new Title(title.main, title.subtitle, title.collection ?? "");
@@ -144,12 +157,27 @@ function handleTitle(details: { url?: string | URL; method?: string; requestId?:
         state.description = responseJson.description.full;
       }
 
+      // bonafides-d seems to be a cookies that's necessary for proper operation
+      state.bonafides_d = responseJson["-odread-bonafides-d"];
+
       const url = new URL(details.url);
       const spine = new Map();
       for (const i in responseJson.spine) {
+        // apparently, the part after the two hyphens is supposed to be 40 characters long,
+        // the remainder gets pushed into the first part, it seems to be the b64 encoded string
+        // {"spine":i}
+        // where i is the spine number
+        let path = responseJson.spine[i].path;
+        const path_split = path.split("?cmpt=");
+        const parameter = path_split[1].split("--");
+        parameter[0] = btoa(`{"spine":${i}}`);
+        parameter[1] = parameter[1].substring(0,40);
+        path_split[1] = encodeURIComponent(parameter.join("--"));
+        path = path_split.join("?cmpt=");
+
         spine.set(
           responseJson.spine[i]["-odread-original-path"],
-          `${url.protocol}//${url.host}/${responseJson.spine[i].path}`
+          `${url.protocol}//${url.host}/${path}`
         );
       }
 

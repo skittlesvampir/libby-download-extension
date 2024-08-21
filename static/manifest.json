@@ -9,6 +9,7 @@
   },
   "permissions": [
     "activeTab",
+    "cookies",
     "downloads",
     "storage",
     "webRequest",

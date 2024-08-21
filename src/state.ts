@@ -42,6 +42,7 @@ export class LoadState {
   narrators: Array<string>;
   description: string;
   chapters: Array<Chapter>;
+  bonafides_d: string;
 
   loaded(): boolean {
     return this.expires != undefined
