@@ -168,12 +168,10 @@ function handleTitle(details: { url?: string | URL; method?: string; requestId?:
         // {"spine":i}
         // where i is the spine number
         let path = responseJson.spine[i].path;
-        const regex = /(.*\.mp3)\?cmpt=([\w+/%]*)(--?)([\w%]*)-?/;
+        const regex = /(.*\.mp3)\?cmpt=([\w+/%]*)(--?)([\w%]{40})([\w%]*-?)/;
         const path_split = path.match(regex);
         const parameter_1 = btoa(`{"spine":${i}}`);
-        const parameter_2 = path_split[4].substring(0, 40);
-
-        const parameter_full = encodeURIComponent(`${parameter_1}${path_split[3]}${parameter_2}`);
+        const parameter_full = encodeURIComponent(`${parameter_1}--${path_split[4]}`);
         path = `${path_split[1]}?cmpt=${parameter_full}`;
 
         spine.set(
