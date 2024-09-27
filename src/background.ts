@@ -172,11 +172,11 @@ function handleTitle(details: { url?: string | URL; method?: string; requestId?:
         let path_split = []
 
         if (path.slice(-2) == '--'){
-          const regex = /(.*\.mp3)\?cmpt=([\w+/%]*)/;
+          const regex = /(.*\.mp3)\?cmpt=([\w%]*)/;
           path_split = path.match(regex);
           parameter_2 = path_split[2].substring(9,49);
         } else {
-          const regex = /(.*\.mp3)\?cmpt=([\w+/%]*)(--?)([\w%]{40})([\w%]*-?)/;
+          const regex = /(.*\.mp3)\?cmpt=([\w%]*)(--?)([\w]{40})([\w%]*-?)/;
           path_split = path.match(regex);
           parameter_2 = path_split[4];
         }
